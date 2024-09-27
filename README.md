@@ -12,6 +12,6 @@ curl -X POST http://localhost:3000/register \
 
 ## GET Endpoint: Fetch all user
 
-```
+```bash
 curl http://localhost:3000/users
 ```
