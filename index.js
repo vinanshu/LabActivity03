@@ -1,38 +1,56 @@
-// Import the Express library
 const express = require('express');
 const bodyParser = require('body-parser');
 
-// Create an instance of an Express application
 const app = express();
-const PORT = 3000;
-
 app.use(bodyParser.json());
 
-app.use((err, req, res, next) => {
-    console.error(err.stack); 
-    res.status(500).json({ error: 'Something went wrong!' }); 
-});
+const users = [];  // Simulating a user database
 
-//array to store user data
-const users = [];
-
-// Route to handle GET requests
-app.get('/users', (req, res) => {
-    console.log('GET /users endpoint was accessed'); 
-    res.status(200).json(users);
-});
-
-
-// Route to handle POST requests
 app.post('/register', (req, res) => {
-    const { name, email, password } = req.body;
-    users.push({ name, email, password });
-    console.log(`POST /users endpoint was accessed ${JSON.stringify(users)}`);
-    res.status(201).json({ message: 'User registered successfully' });
+  const { name, email, password } = req.body;
+
+  console.log('Received registration request:', req.body);
+
+  // Check for required fields
+  const validations = [
+    { condition: !name || typeof name !== 'string' || name.trim() === '', message: 'Name is required' },
+    { condition: !email || typeof email !== 'string' || email.trim() === '', message: 'Email is required' },
+    { condition: !password || typeof password !== 'string' || password.trim() === '', message: 'Password is required' },
+    { condition: email && !/\S+@\S+\.\S+/.test(email), message: 'Invalid email format' },
+    { condition: password && password.length < 6, message: 'Password must be at least 6 characters long' },
+  ];
+
+  for (const validation of validations) {
+    if (validation.condition) {
+      console.log('Validation Error:', validation.message);
+      return res.status(400).json({ error: validation.message });
+    }
+  }
+
+  // Check for unique email
+  const existingUser = users.find(user => user.email === email);
+  if (existingUser) {
+    console.log('Error: Email already exists');
+    return res.status(409).json({ error: 'Email already exists' });
+  }
+
+  // Save the user if all validations pass
+  users.push({ 
+    name: name.trim(), 
+    email: email.trim(), 
+    password 
+  }); // Trimming whitespace
+
+  console.log('User registered successfully:', { name: name.trim(), email: email.trim() });
+  res.status(201).json({ message: 'User registered successfully' });
 });
 
-// Start the server and listen on the specified port
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// Example to get all users
+app.get('/users', (req, res) => {
+  console.log('GET /users request received');
+  res.json(users);
 });
-    
+
+app.listen(3000, () => {
+  console.log('Server running on port 3000');
+});
